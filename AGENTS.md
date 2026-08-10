@@ -1,9 +1,13 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# AGENTS
 
-# This is NOT the Next.js you know
+这是一个 next.js web 项目。基础的大模型网页聊天应用。
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+## Agent skills
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+### Issue tracker
 
-<!-- END:nextjs-agent-rules -->
+问题以 Markdown 文件形式存放在本仓库的 `.scratch/<feature>/` 目录下。见 `docs/agents/issue-tracker.md`。
+
+### Domain docs
+
+单上下文（single-context）布局：根目录的 `CONTEXT.md` + `docs/adr/`。见 `docs/agents/domain.md`。
