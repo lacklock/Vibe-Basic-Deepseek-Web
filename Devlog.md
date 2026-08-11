@@ -6,7 +6,11 @@
 
 安装 [Next.js](https://nextjs.org/docs) ：`pnpm create next-app@latest .`
 
-### 本地 Supabase [可选]
+### Supabase
+
+`pnpm install @supabase/supabase-js @supabase/ssr`
+
+#### 本地 Supabase [可选]
 
 本地需有 docker 环境。
 安装 Supabase CLI：`pnpm add -D supabase`
