@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test src/lib/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
