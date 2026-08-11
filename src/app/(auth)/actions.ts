@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getSafeRedirect } from "@/lib/auth/redirect";
+import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
@@ -56,6 +57,7 @@ export async function loginAction(
   const { error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
+    logger.warn("用户登录失败");
     return {
       status: "error",
       message: "邮箱或密码错误。",
@@ -63,6 +65,7 @@ export async function loginAction(
     };
   }
 
+  logger.info("用户登录成功");
   revalidatePath("/", "layout");
   redirect(getSafeRedirect(next));
 }
@@ -92,6 +95,7 @@ export async function registerAction(
   });
 
   if (error) {
+    logger.error("用户注册失败");
     return {
       status: "error",
       message: "注册暂时失败，请稍后重试。",
@@ -99,6 +103,7 @@ export async function registerAction(
     };
   }
 
+  logger.info("用户注册成功");
   return {
     status: "success",
     message: "注册申请已提交，请检查邮箱并完成验证。",
