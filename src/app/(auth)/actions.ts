@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { getSafeRedirect } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/server";
@@ -12,7 +13,21 @@ export type AuthActionState = {
   email?: string;
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const loginSchema = z.object({
+  email: z.email("请输入有效的邮箱和密码。"),
+  password: z.string().min(1, "请输入有效的邮箱和密码。"),
+});
+
+const registerSchema = z
+  .object({
+    email: z.email("请输入有效的邮箱地址。"),
+    password: z.string().min(8, "密码至少需要 8 位。"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "两次输入的密码不一致。",
+    path: ["confirmPassword"],
+  });
 
 function getValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -27,16 +42,18 @@ export async function loginAction(
   const password = getValue(formData, "password");
   const next = getValue(formData, "next").trim();
 
-  if (!EMAIL_PATTERN.test(email) || !password) {
+  const result = loginSchema.safeParse({ email, password });
+
+  if (!result.success) {
     return {
       status: "error",
-      message: "请输入有效的邮箱和密码。",
+      message: result.error.issues[0]?.message ?? "请输入有效的邮箱和密码。",
       email,
     };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
     return {
@@ -58,32 +75,21 @@ export async function registerAction(
   const password = getValue(formData, "password");
   const confirmPassword = getValue(formData, "confirmPassword");
 
-  if (!EMAIL_PATTERN.test(email)) {
-    return {
-      status: "error",
-      message: "请输入有效的邮箱地址。",
-      email,
-    };
-  }
+  const result = registerSchema.safeParse({ email, password, confirmPassword });
 
-  if (password.length < 8) {
+  if (!result.success) {
     return {
       status: "error",
-      message: "密码至少需要 8 位。",
-      email,
-    };
-  }
-
-  if (password !== confirmPassword) {
-    return {
-      status: "error",
-      message: "两次输入的密码不一致。",
+      message: result.error.issues[0]?.message ?? "注册信息不正确。",
       email,
     };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({
+    email: result.data.email,
+    password: result.data.password,
+  });
 
   if (error) {
     return {
