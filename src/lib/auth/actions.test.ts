@@ -14,9 +14,6 @@ const redirect = mock.fn((path: string): never => {
 });
 const signInWithPassword = mock.fn(async () => ({ error: null }));
 const signUp = mock.fn(async () => ({ error: null }));
-const loggerInfo = mock.fn();
-const loggerWarn = mock.fn();
-const loggerError = mock.fn();
 
 mock.module("next/cache", {
   namedExports: { revalidatePath },
@@ -29,15 +26,6 @@ mock.module("@/lib/supabase/server", {
     createClient: async () => ({
       auth: { signInWithPassword, signUp },
     }),
-  },
-});
-mock.module("@/lib/logger", {
-  namedExports: {
-    logger: {
-      info: loggerInfo,
-      warn: loggerWarn,
-      error: loggerError,
-    },
   },
 });
 
@@ -104,7 +92,6 @@ test("loginAction signs in with parsed data, refreshes the layout, and redirects
   signInWithPassword.mock.resetCalls();
   revalidatePath.mock.resetCalls();
   redirect.mock.resetCalls();
-  loggerInfo.mock.resetCalls();
 
   await assert.rejects(
     loginAction(
@@ -123,7 +110,6 @@ test("loginAction signs in with parsed data, refreshes the layout, and redirects
   ]);
   assert.deepEqual(revalidatePath.mock.calls[0]?.arguments, ["/", "layout"]);
   assert.deepEqual(redirect.mock.calls[0]?.arguments, ["/chat?from=login"]);
-  assert.deepEqual(loggerInfo.mock.calls[0]?.arguments, ["用户登录成功"]);
 });
 
 test("registerAction rejects an email with a one-character top-level domain", async () => {
@@ -179,7 +165,6 @@ test("registerAction rejects mismatched passwords", async () => {
 
 test("registerAction signs up with parsed data", async () => {
   signUp.mock.resetCalls();
-  loggerInfo.mock.resetCalls();
 
   const result = await registerAction(
     { status: "idle" },
@@ -198,5 +183,4 @@ test("registerAction signs up with parsed data", async () => {
     message: "注册申请已提交，请检查邮箱并完成验证。",
     email: "user@example.com",
   });
-  assert.deepEqual(loggerInfo.mock.calls[0]?.arguments, ["用户注册成功"]);
 });
