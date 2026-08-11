@@ -26,4 +26,6 @@ pnpm add -D drizzle-kit@rc tsx
 
 ## Auth
 
+添加 ZOD 库 `pnpm add zod`
+
 [Password-based Auth 基于密码的身份验证](https://supabase.com/docs/guides/auth/passwords?queryGroups=flow&flow=pkce)
