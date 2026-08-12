@@ -117,6 +117,36 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.chat-theme {
+  --background: #fcfaf7;
+  --foreground: #292826;
+  --card: #fffdfa;
+  --card-foreground: #292826;
+  --popover: #fffdfa;
+  --popover-foreground: #292826;
+  --primary: #343331;
+  --primary-foreground: #fffdfa;
+  --secondary: #efebe5;
+  --secondary-foreground: #343331;
+  --muted: #f1eee9;
+  --muted-foreground: #77736d;
+  --accent: #e8edf1;
+  --accent-foreground: #314759;
+  --destructive: #c94b43;
+  --border: #ddd8d0;
+  --input: #d5d0c8;
+  --ring: #607b94;
+  --radius: 0.875rem;
+  --sidebar: #f3f0ea;
+  --sidebar-foreground: #292826;
+  --sidebar-primary: #343331;
+  --sidebar-primary-foreground: #fffdfa;
+  --sidebar-accent: #e8edf1;
+  --sidebar-accent-foreground: #314759;
+  --sidebar-border: #ddd8d0;
+  --sidebar-ring: #607b94;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
