@@ -42,6 +42,7 @@ export function AccountMenu({ email }: AccountMenuProps) {
           <DropdownMenuGroup>
             <form action={logoutAction}>
               <DropdownMenuItem
+                nativeButton
                 render={<button type="submit" className="w-full" />}
                 variant="destructive"
               >
