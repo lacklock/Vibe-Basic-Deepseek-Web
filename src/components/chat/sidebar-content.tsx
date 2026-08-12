@@ -7,7 +7,6 @@ import { RecentChats } from "@/components/chat/recent-chats";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { demoChats } from "@/lib/chat-demo";
 
 type SidebarContentProps = {
   email: string;
@@ -34,7 +33,7 @@ export function SidebarContent({ email }: SidebarContentProps) {
           <p className="px-2 text-[11px] font-medium tracking-[0.08em] text-muted-foreground">
             最近聊天
           </p>
-          <RecentChats chats={demoChats} />
+          <RecentChats chats={[]} />
         </div>
       </ScrollArea>
 

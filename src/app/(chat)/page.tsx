@@ -1,5 +1,5 @@
 import { Brand } from "@/components/chat/brand";
-import { ChatComposer } from "@/components/chat/chat-composer";
+import { HomeChatStarter } from "@/components/chat/home-chat-starter";
 
 export default function HomePage() {
   return (
@@ -17,12 +17,7 @@ export default function HomePage() {
               提出问题、梳理想法，或从一段草稿开始。
             </p>
           </div>
-          <ChatComposer
-            id="home-composer"
-            ariaLabel="发送给 Deepseek"
-            placeholder="给 Deepseek 发消息…"
-            variant="home"
-          />
+          <HomeChatStarter />
         </div>
       </section>
     </main>

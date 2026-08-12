@@ -5,14 +5,22 @@ import { usePathname } from "next/navigation";
 import { MessageCircleIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { DemoChat } from "@/lib/chat-demo";
+
+type RecentChat = {
+  id: string;
+  title: string;
+};
 
 type RecentChatsProps = {
-  chats: DemoChat[];
+  chats: RecentChat[];
 };
 
 export function RecentChats({ chats }: RecentChatsProps) {
   const pathname = usePathname();
+
+  if (chats.length === 0) {
+    return <p className="px-2 py-2 text-xs text-muted-foreground">暂无聊天记录</p>;
+  }
 
   return (
     <nav aria-label="最近聊天" className="flex flex-col gap-1">

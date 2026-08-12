@@ -44,6 +44,19 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims?.sub);
   const pathname = request.nextUrl.pathname;
 
+  if (!isAuthenticated && pathname.startsWith("/api/")) {
+    const unauthorizedResponse = NextResponse.json(
+      { error: "未登录或登录状态已失效。" },
+      { status: 401 },
+    );
+
+    response.cookies.getAll().forEach((cookie) => {
+      unauthorizedResponse.cookies.set(cookie);
+    });
+
+    return unauthorizedResponse;
+  }
+
   if (!isAuthenticated && !isPublicRoute(pathname)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
