@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isAuthPage, isPublicRoute } from "./routes";
+import { isAuthPage, isPublicRoute } from "@/lib/auth/routes";
 
 test("只公开认证入口和已知静态文件", () => {
   assert.equal(isPublicRoute("/login"), true);

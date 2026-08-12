@@ -29,11 +29,11 @@ mock.module("@/lib/supabase/server", {
   },
 });
 
-let loginAction: typeof import("../../app/(auth)/actions").loginAction;
-let registerAction: typeof import("../../app/(auth)/actions").registerAction;
+let loginAction: typeof import("@/app/(auth)/actions").loginAction;
+let registerAction: typeof import("@/app/(auth)/actions").registerAction;
 
 before(async () => {
-  ({ loginAction, registerAction } = await import("../../app/(auth)/actions"));
+  ({ loginAction, registerAction } = await import("@/app/(auth)/actions"));
 });
 
 function makeFormData(fields: Record<string, string>) {

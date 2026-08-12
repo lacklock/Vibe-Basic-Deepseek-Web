@@ -42,10 +42,10 @@ mock.module("@/db", {
   },
 });
 
-let updateNicknameAction: typeof import("../../app/profile/actions").updateNicknameAction;
+let updateNicknameAction: typeof import("@/app/profile/actions").updateNicknameAction;
 
 before(async () => {
-  ({ updateNicknameAction } = await import("../../app/profile/actions"));
+  ({ updateNicknameAction } = await import("@/app/profile/actions"));
 });
 
 beforeEach(() => {

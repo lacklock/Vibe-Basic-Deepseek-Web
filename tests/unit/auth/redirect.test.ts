@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getSafeRedirect } from "./redirect";
+import { getSafeRedirect } from "@/lib/auth/redirect";
 
 test("允许站内路径并保留查询参数", () => {
   assert.equal(getSafeRedirect("/chat?id=1"), "/chat?id=1");
