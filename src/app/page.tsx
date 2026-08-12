@@ -1,5 +1,6 @@
 import { logoutAction } from "@/app/auth/actions";
 import { requireUser } from "@/lib/auth/require-user";
+import Link from "next/link";
 
 export default async function Home() {
   const claims = await requireUser();
@@ -17,14 +18,22 @@ export default async function Home() {
           认证模块已经工作。接下来可以在这里接入聊天界面。
         </p>
 
-        <form action={logoutAction} className="mt-8">
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/profile"
+            className="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
-            退出登录
-          </button>
-        </form>
+            编辑个人资料
+          </Link>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              退出登录
+            </button>
+          </form>
+        </div>
       </section>
     </main>
   );
