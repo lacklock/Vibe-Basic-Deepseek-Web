@@ -93,7 +93,7 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
 
       <ScrollArea className="min-h-0">
         <section
-          className="mx-auto flex min-h-full w-full max-w-[808px] flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10"
+          className="mx-auto flex min-h-full w-full max-w-202 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10"
           aria-label="对话内容"
           aria-live="polite"
         >
@@ -156,7 +156,7 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
       </ScrollArea>
 
       <footer className="bg-background px-3 pt-2 pb-3 sm:px-6 sm:pb-5">
-        <div className="mx-auto w-full max-w-[760px]">
+        <div className="mx-auto w-full max-w-190">
           {handoffError || error ? (
             <div
               className="mb-2 flex items-center justify-between gap-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive"
