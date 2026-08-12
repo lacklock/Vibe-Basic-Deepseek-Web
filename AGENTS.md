@@ -2,6 +2,13 @@
 
 这是一个 next.js web 项目。基础的大模型网页聊天应用。
 
+## 技术栈
+
+- vercel ai sdk
+- 图标：lucide
+- ORM：drizzle
+- 数据库：supabase
+
 ## Agent skills
 
 ### Issue tracker
