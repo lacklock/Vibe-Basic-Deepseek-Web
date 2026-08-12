@@ -28,6 +28,15 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage, regenerate, status, error } = useChat({ id: chatId });
   const isBusy = status === "submitted" || status === "streaming";
+  const lastMessage = messages.at(-1);
+  const hasStreamingResponse =
+    lastMessage?.role === "assistant" && getMessageText(lastMessage.parts).trim().length > 0;
+  const responseStatus =
+    status === "submitted"
+      ? "正在等待 DeepSeek 响应…"
+      : status === "streaming" && !hasStreamingResponse
+        ? "DeepSeek 正在思考…"
+        : null;
   const firstUserMessage = messages.find((message) => message.role === "user");
   const title = firstUserMessage
     ? getMessageText(firstUserMessage.parts).slice(0, 48) || "当前会话"
@@ -94,40 +103,52 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
             </div>
           ) : null}
 
-          {messages.map((message, messageIndex) => (
-            <article
-              key={message.id}
-              className={cn("flex", message.role === "user" && "justify-end")}
-            >
-              <div
-                className={cn(
-                  "max-w-full text-[15px] leading-7 sm:text-base",
-                  message.role === "user"
-                    ? "max-w-[82%] rounded-2xl bg-primary px-4 py-2.5 whitespace-pre-wrap text-primary-foreground sm:max-w-[70%]"
-                    : "w-full px-1 text-foreground",
-                )}
-              >
-                {message.parts.map((part, index) =>
-                  part.type === "text" ? (
-                    message.role === "assistant" ? (
-                      <MessageResponse
-                        key={`${message.id}-${index}`}
-                        animated
-                        isAnimating={status === "streaming" && messageIndex === messages.length - 1}
-                      >
-                        {part.text}
-                      </MessageResponse>
-                    ) : (
-                      <span key={`${message.id}-${index}`}>{part.text}</span>
-                    )
-                  ) : null,
-                )}
-              </div>
-            </article>
-          ))}
+          {messages.map((message, messageIndex) => {
+            const hasText = getMessageText(message.parts).trim().length > 0;
 
-          {status === "submitted" ? (
-            <p className="px-1 text-sm text-muted-foreground">Deepseek 正在思考…</p>
+            if (!hasText) {
+              return null;
+            }
+
+            return (
+              <article
+                key={message.id}
+                className={cn("flex", message.role === "user" && "justify-end")}
+              >
+                <div
+                  className={cn(
+                    "max-w-full text-[15px] leading-7 sm:text-base",
+                    message.role === "user"
+                      ? "max-w-[82%] rounded-2xl bg-primary px-4 py-2.5 whitespace-pre-wrap text-primary-foreground sm:max-w-[70%]"
+                      : "w-full px-1 text-foreground",
+                  )}
+                >
+                  {message.parts.map((part, index) =>
+                    part.type === "text" ? (
+                      message.role === "assistant" ? (
+                        <MessageResponse
+                          key={`${message.id}-${index}`}
+                          animated
+                          isAnimating={
+                            status === "streaming" && messageIndex === messages.length - 1
+                          }
+                        >
+                          {part.text}
+                        </MessageResponse>
+                      ) : (
+                        <span key={`${message.id}-${index}`}>{part.text}</span>
+                      )
+                    ) : null,
+                  )}
+                </div>
+              </article>
+            );
+          })}
+
+          {responseStatus ? (
+            <p className="px-1 text-sm text-muted-foreground" role="status">
+              {responseStatus}
+            </p>
           ) : null}
 
           <div ref={endOfMessagesRef} aria-hidden="true" />
