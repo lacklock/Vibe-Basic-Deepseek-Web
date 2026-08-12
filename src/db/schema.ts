@@ -1,11 +1,4 @@
-import {
-  pgSchema,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { pgSchema, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 const authSchema = pgSchema("auth");
 
@@ -19,7 +12,5 @@ export const usersTable = pgTable("user_profile", {
     .references(() => authUsersTable.id, { onDelete: "cascade" }),
   nickname: varchar({ length: 32 }),
   avatar: text(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
