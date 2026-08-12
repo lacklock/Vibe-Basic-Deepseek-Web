@@ -1,11 +1,13 @@
 # AGENTS
 
 这是一个 next.js web 项目。基础的大模型网页聊天应用。
+如果需要使用图标、 UI组件，优先考虑使用 lucide 和 shadcn
 
 ## 技术栈
 
 - vercel ai sdk
 - 图标：lucide
+- UI 组件库：shadcn
 - ORM：drizzle
 - 数据库：supabase
 
