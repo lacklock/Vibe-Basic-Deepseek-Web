@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
 
+import { MessageResponse } from "@/components/ai-elements/message";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -93,22 +94,32 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
             </div>
           ) : null}
 
-          {messages.map((message) => (
+          {messages.map((message, messageIndex) => (
             <article
               key={message.id}
               className={cn("flex", message.role === "user" && "justify-end")}
             >
               <div
                 className={cn(
-                  "max-w-full text-[15px] leading-7 whitespace-pre-wrap sm:text-base",
+                  "max-w-full text-[15px] leading-7 sm:text-base",
                   message.role === "user"
-                    ? "max-w-[82%] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground sm:max-w-[70%]"
+                    ? "max-w-[82%] rounded-2xl bg-primary px-4 py-2.5 whitespace-pre-wrap text-primary-foreground sm:max-w-[70%]"
                     : "w-full px-1 text-foreground",
                 )}
               >
                 {message.parts.map((part, index) =>
                   part.type === "text" ? (
-                    <span key={`${message.id}-${index}`}>{part.text}</span>
+                    message.role === "assistant" ? (
+                      <MessageResponse
+                        key={`${message.id}-${index}`}
+                        animated
+                        isAnimating={status === "streaming" && messageIndex === messages.length - 1}
+                      >
+                        {part.text}
+                      </MessageResponse>
+                    ) : (
+                      <span key={`${message.id}-${index}`}>{part.text}</span>
+                    )
                   ) : null,
                 )}
               </div>

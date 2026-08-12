@@ -1,5 +1,3 @@
-"use client";
-
 import type { FormEvent, KeyboardEvent } from "react";
 import { ArrowUpIcon } from "lucide-react";
 
