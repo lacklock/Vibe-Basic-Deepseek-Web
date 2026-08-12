@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Vibe Chat——简洁、专注的大模型聊天应用。">
+  <title>Vibe Chat</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #fafafa;
+      --surface-warm: var(--surface);
+      --fg: #000000;
+      --fg-2: #212121;
+      --muted: #93939f;
+      --meta: var(--muted);
+      --border: #d9d9dd;
+      --border-soft: #f2f2f2;
+      --accent: #1863dc;
+      --accent-on: #ffffff;
+      --accent-hover: color-mix(in oklab, var(--accent), black 8%);
+      --accent-active: color-mix(in oklab, var(--accent), black 16%);
+      --success: #16a34a;
+      --warn: #eab308;
+      --danger: #ef4444;
+      --font-display: "CohereText", "Space Grotesk", Inter, ui-sans-serif, sans-serif;
+      --font-body: "Unica77 Cohere Web", Inter, Arial, ui-sans-serif, sans-serif;
+      --font-mono: "CohereMono", "JetBrains Mono", ui-monospace, monospace;
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 18px;
+      --text-xl: 24px;
+      --text-2xl: 32px;
+      --text-3xl: 60px;
+      --text-4xl: 72px;
+      --leading-body: 1.5;
+      --leading-tight: 1.0;
+      --tracking-display: -0.02em;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --section-y-desktop: 60px;
+      --section-y-tablet: 48px;
+      --section-y-phone: 32px;
+      --radius-sm: 8px;
+      --radius-md: 22px;
+      --radius-lg: 22px;
+      --radius-pill: 9999px;
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border-soft);
+      --elev-raised: 0 4px 16px rgba(0, 0, 0, 0.06);
+      --focus-ring: 0 0 0 2px var(--accent);
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+      --container-max: 1440px;
+      --container-gutter-desktop: 32px;
+      --container-gutter-tablet: 24px;
+      --container-gutter-phone: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      color: var(--fg);
+      background: var(--bg);
+      font-family: var(--font-body);
+      font-feature-settings: "liga" 1;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, textarea:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+    button, [role="button"] { -webkit-tap-highlight-color: transparent; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+    .app-shell { height: 100dvh; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+    .sidebar {
+      position: relative;
+      z-index: 30;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      box-shadow: 1px 0 0 var(--border-soft);
+    }
+    .sidebar-top { padding: var(--space-4) var(--space-3) var(--space-2); }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      height: 36px;
+      padding: 0 var(--space-2);
+      font-size: var(--text-base);
+      font-family: var(--font-display);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+    .brand-mark { width: 18px; height: 18px; display: grid; place-items: center; }
+    .brand-mark svg { width: 100%; height: 100%; }
+    .new-chat {
+      width: 100%;
+      min-height: 40px;
+      margin-top: var(--space-2);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 var(--space-3);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--fg);
+      color: var(--bg);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      transition: transform var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+      box-shadow: none;
+    }
+    .new-chat:hover { background: var(--accent); }
+    .new-chat:active { transform: translateY(1px); }
+    .new-chat svg, .icon-button svg { width: 18px; height: 18px; flex: none; }
+    .history { min-height: 0; flex: 1; overflow: hidden auto; padding: var(--space-4) var(--space-3); }
+    .history-label {
+      margin: 0 var(--space-2) var(--space-2);
+      color: var(--meta);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    .history-list { display: grid; gap: 2px; }
+    .history-item {
+      width: 100%;
+      height: 36px;
+      display: block;
+      overflow: hidden;
+      padding: 0 var(--space-2);
+      border: 0;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--fg-2);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+    }
+    .history-item:hover { background: var(--bg); color: var(--accent); }
+    .history-item.active { background: var(--bg); color: var(--fg); box-shadow: var(--elev-ring); font-weight: 500; }
+    .sidebar-bottom { position: relative; padding: var(--space-3); box-shadow: 0 -1px 0 var(--border-soft); }
+    .user-row {
+      width: 100%; min-height: 44px; display: flex; align-items: center; gap: var(--space-2);
+      padding: 0 4px 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent;
+    }
+    .user-email { min-width: 0; flex: 1; overflow: hidden; color: var(--fg-2); font-size: var(--text-xs); text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+    .more-button, .icon-button {
+      width: 36px; height: 36px; display: grid; place-items: center; flex: none; padding: 0;
+      border: 0; border-radius: var(--radius-sm); background: transparent; cursor: pointer;
+      transition: background var(--motion-fast) var(--ease-standard);
+    }
+    .more-button:hover, .icon-button:hover { background: color-mix(in oklab, var(--fg), transparent 94%); }
+    .more-button svg { width: 18px; height: 18px; }
+    .user-menu {
+      position: absolute; right: var(--space-3); bottom: 60px; width: 168px; display: none; padding: 6px;
+      border-radius: var(--radius-md); background: var(--bg); box-shadow: var(--elev-ring), var(--elev-raised); transform-origin: bottom right;
+    }
+    .user-menu.open { display: grid; animation: menu-in var(--motion-fast) var(--ease-standard); }
+    .menu-item { min-height: 36px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; cursor: pointer; color: var(--fg); font-size: var(--text-sm); text-align: left; }
+    .menu-item:hover { background: var(--surface); color: var(--accent); }
+    .menu-item.danger { color: var(--danger); }
+    @keyframes menu-in { from { opacity: 0; transform: translateY(4px) scale(.98); } }
+
+    .workspace { position: relative; min-width: 0; height: 100dvh; background: var(--bg); }
+    .mobile-header { display: none; }
+    .screen { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity var(--motion-base) var(--ease-standard); }
+    .screen.active { opacity: 1; pointer-events: auto; }
+
+    .home-screen { display: grid; place-items: center; padding: var(--space-8); }
+    .home-core { width: min(680px, 100%); display: grid; justify-items: center; gap: var(--space-8); transform: translateY(-3vh); }
+    .home-heading { margin: 0; max-width: 760px; font-family: var(--font-display); font-size: clamp(42px, 5vw, var(--text-4xl)); line-height: var(--leading-tight); letter-spacing: var(--tracking-display); text-align: center; font-weight: 400; }
+    .home-kicker { margin: -18px 0 0; color: var(--muted); font-size: var(--text-sm); text-align: center; }
+
+    .composer {
+      width: 100%; padding: var(--space-3); border-radius: var(--radius-lg); background: var(--bg); box-shadow: var(--elev-ring);
+      transition: box-shadow var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard);
+    }
+    .composer:focus-within { box-shadow: var(--elev-ring), var(--focus-ring); }
+    .composer textarea {
+      width: 100%; min-height: 70px; max-height: 180px; display: block; resize: none; overflow: auto;
+      padding: var(--space-2); border: 0; outline: 0; background: transparent; color: var(--fg); font-size: var(--text-base); line-height: var(--leading-body);
+    }
+    .composer textarea::placeholder { color: var(--meta); }
+    .composer-actions { display: flex; align-items: center; justify-content: space-between; padding: 4px; }
+    .composer-hint { color: var(--meta); font-size: var(--text-xs); }
+    .send-button {
+      width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--radius-sm);
+      background: var(--fg); color: var(--bg); cursor: pointer; box-shadow: none;
+      transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+    }
+    .send-button:hover { background: var(--accent); transform: translateY(-1px); }
+    .send-button:active { transform: translateY(0); }
+    .send-button:disabled { opacity: .28; cursor: default; transform: none; }
+    .send-button svg { width: 17px; height: 17px; }
+
+    .chat-screen { display: grid; grid-template-rows: 57px minmax(0, 1fr) auto; }
+    .chat-header { display: flex; align-items: center; padding: 0 var(--space-6); box-shadow: 0 1px 0 var(--border-soft); background: color-mix(in oklab, var(--bg), transparent 6%); backdrop-filter: blur(12px); }
+    .chat-title { margin: 0; overflow: hidden; font-size: var(--text-sm); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+    .conversation { min-height: 0; overflow: hidden auto; padding: var(--space-8) var(--space-6) var(--space-12); overscroll-behavior: contain; }
+    .messages { width: min(760px, 100%); margin: 0 auto; display: grid; gap: var(--space-8); }
+    .message { display: flex; }
+    .message.user { justify-content: flex-end; }
+    .message-content {
+      min-width: 0;
+      max-width: min(75%, 560px);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      color: var(--fg);
+      box-shadow: 0 0 0 1px var(--border);
+      font-size: var(--text-base);
+      line-height: 1.7;
+    }
+    .message.user .message-content { background: var(--fg); color: var(--bg); box-shadow: none; }
+    .message-content p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chat-composer-wrap { padding: var(--space-3) var(--space-6) var(--space-5); background: linear-gradient(to bottom, transparent, var(--bg) 18%); }
+    .chat-composer-wrap .composer { width: min(760px, 100%); margin: 0 auto; }
+    .chat-composer-wrap .composer textarea { min-height: 48px; }
+    .disclaimer { margin: var(--space-2) 0 0; color: var(--meta); font-size: 11px; text-align: center; }
+    .drawer-backdrop { display: none; }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 80; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--fg); color: var(--bg); box-shadow: var(--elev-raised); font-size: var(--text-sm); opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: opacity var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 760px) {
+      .app-shell { display: block; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: min(280px, 84vw); transform: translateX(-102%); transition: transform var(--motion-base) var(--ease-standard); box-shadow: var(--elev-ring), var(--elev-raised); }
+      .sidebar.open { transform: translateX(0); }
+      .drawer-backdrop { position: fixed; inset: 0; z-index: 20; display: block; border: 0; background: color-mix(in oklab, var(--fg), transparent 58%); opacity: 0; pointer-events: none; transition: opacity var(--motion-base) var(--ease-standard); }
+      .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+      .workspace { height: 100dvh; }
+      .mobile-header { position: absolute; inset: 0 0 auto 0; z-index: 10; height: 56px; display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); background: color-mix(in oklab, var(--bg), transparent 6%); box-shadow: 0 1px 0 var(--border-soft); backdrop-filter: blur(12px); }
+      .mobile-brand { font-size: var(--text-sm); font-weight: 600; }
+      .home-screen { padding: 76px var(--space-4) var(--space-6); }
+      .home-core { gap: var(--space-6); transform: translateY(-2vh); }
+      .home-heading { font-size: clamp(38px, 12vw, 54px); }
+      .home-kicker { margin-top: -12px; }
+      .composer-hint { display: none; }
+      .chat-screen { grid-template-rows: 56px minmax(0, 1fr) auto; }
+      .chat-header { padding: 0 52px; justify-content: center; }
+      .chat-title { max-width: 70vw; }
+      .conversation { padding: var(--space-6) var(--space-4) var(--space-8); }
+      .messages { gap: var(--space-6); }
+      .message-content { max-width: 82%; padding: 10px var(--space-3); font-size: 15px; }
+      .chat-composer-wrap { padding: var(--space-2) var(--space-3) var(--space-3); }
+      .disclaimer { display: none; }
+      .toast { bottom: 16px; max-width: calc(100vw - 32px); white-space: nowrap; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell" data-od-id="app-shell">
+    <aside class="sidebar" id="sidebar" data-od-id="global-sidebar" aria-label="全局导航">
+      <div class="sidebar-top">
+        <div class="brand" data-od-id="brand-name">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 18 18" fill="none"><path d="M9 2 16 15H2L9 2Z" fill="currentColor"/></svg></span>
+          <span>Vibe chat</span>
+        </div>
+        <button class="new-chat" id="newChat" data-od-id="new-chat-button" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          开启新会话
+        </button>
+      </div>
+      <nav class="history" data-od-id="recent-chats" aria-label="最近的聊天">
+        <p class="history-label">最近聊天</p>
+        <div class="history-list" id="historyList"></div>
+      </nav>
+      <div class="sidebar-bottom" data-od-id="account-area">
+        <div class="user-row">
+          <span class="user-email">hello@vibechat.cn</span>
+          <button class="more-button" id="moreButton" data-od-id="account-menu-button" type="button" aria-label="打开账户菜单" aria-haspopup="menu" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+        </div>
+        <div class="user-menu" id="userMenu" data-od-id="account-menu" role="menu">
+          <button class="menu-item" type="button" role="menuitem" data-action="profile">编辑个人资料</button>
+          <button class="menu-item danger" type="button" role="menuitem" data-action="logout">退出登录</button>
+        </div>
+      </div>
+    </aside>
+
+    <button class="drawer-backdrop" id="drawerBackdrop" type="button" aria-label="关闭菜单"></button>
+
+    <main class="workspace" data-od-id="main-content">
+      <header class="mobile-header" data-od-id="mobile-header">
+        <button class="icon-button" id="menuButton" type="button" aria-label="打开菜单" aria-controls="sidebar" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <span class="mobile-brand">Vibe chat</span>
+      </header>
+
+      <section class="screen home-screen active" id="homeScreen" data-od-id="home-screen" aria-labelledby="homeHeading">
+        <div class="home-core">
+          <h1 class="home-heading" id="homeHeading" data-od-id="home-heading">开始和 Deepseek 聊天</h1>
+          <p class="home-kicker">提出问题、梳理想法，或从一段草稿开始。</p>
+          <form class="composer" id="homeComposer" data-od-id="home-chat-input">
+            <label class="sr-only" for="homeInput">发送给 Deepseek</label>
+            <textarea id="homeInput" rows="2" placeholder="给 Deepseek 发消息…" maxlength="4000"></textarea>
+            <div class="composer-actions">
+              <span class="composer-hint">按 Enter 发送，Shift + Enter 换行</span>
+              <button class="send-button" id="homeSend" data-od-id="home-send-button" type="submit" aria-label="发送消息" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="screen chat-screen" id="chatScreen" data-od-id="chat-screen" aria-labelledby="chatTitle">
+        <header class="chat-header" data-od-id="chat-header">
+          <h1 class="chat-title" id="chatTitle">新会话</h1>
+        </header>
+        <div class="conversation" id="conversation" data-od-id="conversation-area" aria-live="polite">
+          <div class="messages" id="messages"></div>
+        </div>
+        <div class="chat-composer-wrap">
+          <form class="composer" id="chatComposer" data-od-id="chat-input">
+            <label class="sr-only" for="chatInput">继续给 Deepseek 发消息</label>
+            <textarea id="chatInput" rows="1" placeholder="继续给 Deepseek 发消息…" maxlength="4000"></textarea>
+            <div class="composer-actions">
+              <span class="composer-hint">按 Enter 发送，Shift + Enter 换行</span>
+              <button class="send-button" id="chatSend" data-od-id="chat-send-button" type="submit" aria-label="发送消息" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </form>
+          <p class="disclaimer">AI 生成的内容可能存在错误，请核查重要信息。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const homeScreen = $('#homeScreen');
+      const chatScreen = $('#chatScreen');
+      const chatTitle = $('#chatTitle');
+      const messages = $('#messages');
+      const conversation = $('#conversation');
+      const historyList = $('#historyList');
+      const sidebar = $('#sidebar');
+      const drawerBackdrop = $('#drawerBackdrop');
+      const menuButton = $('#menuButton');
+      const userMenu = $('#userMenu');
+      const moreButton = $('#moreButton');
+      const homeInput = $('#homeInput');
+      const chatInput = $('#chatInput');
+      const homeSend = $('#homeSend');
+      const chatSend = $('#chatSend');
+      const toast = $('#toast');
+
+      const seedChats = [
+        '如何制定一周学习计划', '帮我优化产品需求文档', '解释什么是向量数据库', '旅行行李清单', '写一封项目进度邮件',
+        '分析用户访谈记录', '给独立开发者的建议', '准备季度复盘提纲', '梳理新功能发布步骤', '中文文案润色'
+      ];
+      let chats = seedChats.map((title, index) => ({ id: `demo-${index + 1}`, title }));
+      let currentChatId = null;
+      let toastTimer;
+
+      function titleFrom(text) {
+        const compact = text.replace(/\s+/g, ' ').trim();
+        return Array.from(compact).slice(0, 15).join('') || '新会话';
+      }
+
+      function chatId() {
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+      }
+
+      function aiReply(input) {
+        const short = Array.from(input.replace(/\s+/g, ' ').trim()).slice(0, 36).join('');
+        return `收到。关于“${short}${Array.from(input).length > 36 ? '…' : ''}”，我建议先明确目标和使用场景，再把问题拆成可验证的小步骤。\n\n如果你愿意，我可以继续帮你整理成一份清晰的执行清单。`;
+      }
+
+      function renderHistory() {
+        historyList.innerHTML = '';
+        chats.slice(0, 10).forEach((chat) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `history-item${chat.id === currentChatId ? ' active' : ''}`;
+          button.dataset.id = chat.id;
+          button.dataset.odId = `recent-chat-${chat.id}`;
+          button.title = chat.title;
+          button.textContent = chat.title;
+          button.addEventListener('click', () => openExistingChat(chat));
+          historyList.append(button);
+        });
+      }
+
+      function addMessage(role, content) {
+        const article = document.createElement('article');
+        article.className = `message ${role}`;
+        article.dataset.odId = `message-${role}-${messages.children.length + 1}`;
+        const body = document.createElement('div');
+        body.className = 'message-content';
+        const paragraph = document.createElement('p');
+        paragraph.textContent = content;
+        body.append(paragraph);
+        article.append(body);
+        messages.append(article);
+        requestAnimationFrame(() => { conversation.scrollTop = conversation.scrollHeight; });
+      }
+
+      function setRoute(path, replace = false) {
+        const method = replace ? 'replaceState' : 'pushState';
+        history[method]({}, '', path);
+      }
+
+      function showHome(updateRoute = true) {
+        currentChatId = null;
+        homeScreen.classList.add('active');
+        chatScreen.classList.remove('active');
+        document.title = 'Vibe Chat';
+        if (updateRoute) setRoute('/');
+        closeDrawer();
+        renderHistory();
+        requestAnimationFrame(() => homeInput.focus());
+      }
+
+      function showChat(id, title, firstMessage, updateRoute = true) {
+        currentChatId = id;
+        homeScreen.classList.remove('active');
+        chatScreen.classList.add('active');
+        chatTitle.textContent = title;
+        document.title = `${title} · Vibe Chat`;
+        messages.innerHTML = '';
+        if (firstMessage) {
+          addMessage('user', firstMessage);
+          addMessage('assistant', aiReply(firstMessage));
+        }
+        if (updateRoute) setRoute(`/chat/${encodeURIComponent(id)}`);
+        closeDrawer();
+        renderHistory();
+      }
+
+      function startChat(text) {
+        const title = titleFrom(text);
+        const id = chatId();
+        chats = [{ id, title }, ...chats.filter((chat) => chat.id !== id)].slice(0, 10);
+        showChat(id, title, text);
+        homeInput.value = '';
+        homeSend.disabled = true;
+      }
+
+      function openExistingChat(chat) {
+        showChat(chat.id, chat.title, `继续聊聊：${chat.title}`);
+      }
+
+      function submitChat(text) {
+        addMessage('user', text);
+        addMessage('assistant', aiReply(text));
+        chatInput.value = '';
+        chatInput.style.height = '';
+        chatSend.disabled = true;
+        chatInput.focus();
+      }
+
+      function bindComposer(input, button, onSubmit) {
+        const form = input.closest('form');
+        input.addEventListener('input', () => {
+          button.disabled = !input.value.trim();
+          input.style.height = 'auto';
+          input.style.height = `${Math.min(input.scrollHeight, 180)}px`;
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+            event.preventDefault();
+            form.requestSubmit();
+          }
+        });
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const text = input.value.trim();
+          if (text) onSubmit(text);
+        });
+      }
+
+      function openDrawer() {
+        sidebar.classList.add('open');
+        drawerBackdrop.classList.add('open');
+        menuButton.setAttribute('aria-expanded', 'true');
+      }
+      function closeDrawer() {
+        sidebar.classList.remove('open');
+        drawerBackdrop.classList.remove('open');
+        menuButton.setAttribute('aria-expanded', 'false');
+      }
+      function notify(text) {
+        clearTimeout(toastTimer);
+        toast.textContent = text;
+        toast.classList.add('show');
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+
+      bindComposer(homeInput, homeSend, startChat);
+      bindComposer(chatInput, chatSend, submitChat);
+      $('#newChat').addEventListener('click', () => showHome());
+      menuButton.addEventListener('click', () => sidebar.classList.contains('open') ? closeDrawer() : openDrawer());
+      drawerBackdrop.addEventListener('click', closeDrawer);
+      moreButton.addEventListener('click', () => {
+        const isOpen = userMenu.classList.toggle('open');
+        moreButton.setAttribute('aria-expanded', String(isOpen));
+      });
+      userMenu.addEventListener('click', (event) => {
+        const action = event.target.dataset.action;
+        if (!action) return;
+        userMenu.classList.remove('open');
+        moreButton.setAttribute('aria-expanded', 'false');
+        notify(action === 'profile' ? '个人资料编辑功能即将开放' : '已安全退出当前账户');
+      });
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.sidebar-bottom')) {
+          userMenu.classList.remove('open');
+          moreButton.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { closeDrawer(); userMenu.classList.remove('open'); }
+      });
+      window.addEventListener('popstate', routeFromLocation);
+
+      function routeFromLocation() {
+        const match = location.pathname.match(/^\/chat\/([^/]+)/);
+        if (!match) { showHome(false); return; }
+        const id = decodeURIComponent(match[1]);
+        const chat = chats.find((item) => item.id === id) || { id, title: '当前会话' };
+        showChat(chat.id, chat.title, chat.id.startsWith('demo-') ? `继续聊聊：${chat.title}` : '', false);
+      }
+
+      renderHistory();
+      routeFromLocation();
+    })();
+  </script>
+</body>
+</html>
