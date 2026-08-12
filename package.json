@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-test-module-mocks --import tsx --test src/lib/**/*.test.ts"
+    "test": "node --experimental-test-module-mocks --import tsx --test src/lib/**/*.test.ts",
+    "db:generate": "drizzle-kit generate --config=drizzle.test.config.ts",
+    "db:migrate:test": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:migrate:prod": "drizzle-kit migrate --config=drizzle.prod.config.ts"
   },
   "engines": {
     "node": ">=22.0.0"
