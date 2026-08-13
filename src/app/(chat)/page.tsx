@@ -8,7 +8,7 @@ export default function HomePage() {
         <Brand />
       </header>
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 pb-14 sm:px-8">
-        <div className="flex w-full max-w-[680px] -translate-y-[3vh] flex-col items-center gap-7">
+        <div className="flex w-full max-w-170 translate-y-[-3vh] flex-col items-center gap-7">
           <div className="flex flex-col items-center gap-3 text-center">
             <h1 className="text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
               开始和 Deepseek 聊天
