@@ -23,8 +23,17 @@ export const chatsTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
     title: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [index("chats_user_id_idx").on(table.userId)],
+  (table) => [
+    index("chats_user_id_created_at_chat_id_idx").on(
+      table.userId,
+      table.createdAt,
+      table.chatId,
+    ),
+  ],
 );
 
 export const messagesTable = pgTable(
@@ -36,9 +45,17 @@ export const messagesTable = pgTable(
       .references(() => chatsTable.chatId, { onDelete: "cascade" }),
     role: varchar({ length: 16 }).notNull(),
     content: text().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [index("messages_chat_id_idx").on(table.chatId)],
+  (table) => [
+    index("messages_chat_id_created_at_message_id_idx").on(
+      table.chatId,
+      table.createdAt,
+      table.messageId,
+    ),
+  ],
 );
 
 export type Chat = typeof chatsTable.$inferSelect;
