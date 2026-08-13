@@ -15,7 +15,7 @@ type SidebarContentProps = {
 
 export function SidebarContent({ chats, email }: SidebarContentProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex flex-col gap-2 px-3 pt-4 pb-2">
         <Brand />
         <Button
