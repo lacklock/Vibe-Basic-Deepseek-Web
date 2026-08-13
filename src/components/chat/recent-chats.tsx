@@ -6,7 +6,7 @@ import { MessageCircleIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type RecentChat = {
+export type RecentChat = {
   id: string;
   title: string;
 };

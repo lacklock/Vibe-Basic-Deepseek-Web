@@ -7,8 +7,26 @@ import {
   toUIMessageStream,
 } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
 
+import { getOwnedMessageRole, requireOwnedChat, saveMessage } from "@/db/queries/chats";
+import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
+
+const chatRequestSchema = z.object({
+  id: z.uuid(),
+  messages: z.unknown(),
+  trigger: z.enum(["submit-message", "regenerate-message"]),
+  messageId: z.uuid().optional(),
+});
+
+function getMessageText(message: UIMessage): string {
+  return message.parts
+    .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
+    .map((part) => part.text)
+    .join("");
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -26,15 +44,64 @@ export async function POST(req: Request) {
     return Response.json({ error: "请求内容不是有效的 JSON。" }, { status: 400 });
   }
 
-  const messages =
-    typeof body === "object" && body !== null && "messages" in body
-      ? (body as { messages: unknown }).messages
-      : undefined;
-  const validation = await safeValidateUIMessages<UIMessage>({ messages });
+  const parsedRequest = chatRequestSchema.safeParse(body);
 
-  if (!validation.success) {
+  if (!parsedRequest.success) {
+    return Response.json({ error: "请求参数无效。" }, { status: 400 });
+  }
+
+  const validation = await safeValidateUIMessages<UIMessage>({
+    messages: parsedRequest.data.messages,
+  });
+
+  if (!validation.success || validation.data.length === 0) {
     return Response.json({ error: "消息格式无效。" }, { status: 400 });
   }
+
+  const userId = data.claims.sub;
+  const { id: chatId, trigger, messageId } = parsedRequest.data;
+
+  try {
+    await requireOwnedChat(userId, chatId);
+  } catch (cause) {
+    logger.warn({ err: cause, userId, chatId }, "拒绝访问不存在或不属于用户的会话");
+    return Response.json({ error: "聊天不存在或无权访问。" }, { status: 404 });
+  }
+
+  if (trigger === "submit-message") {
+    const userMessage = validation.data.at(-1);
+    const parsedUserMessageId = z.uuid().safeParse(userMessage?.id);
+    const content = userMessage ? getMessageText(userMessage).trim() : "";
+
+    if (
+      !userMessage ||
+      userMessage.role !== "user" ||
+      !parsedUserMessageId.success ||
+      content.length === 0
+    ) {
+      return Response.json({ error: "最后一条用户消息无效。" }, { status: 400 });
+    }
+
+    try {
+      await saveMessage({
+        userId,
+        chatId,
+        messageId: parsedUserMessageId.data,
+        role: "user",
+        content,
+      });
+    } catch (cause) {
+      logger.error({ err: cause, userId, chatId }, "保存用户消息失败");
+      return Response.json({ error: "保存消息失败，请稍后重试。" }, { status: 500 });
+    }
+  }
+
+  const regeneratedMessageRole =
+    trigger === "regenerate-message" && messageId
+      ? await getOwnedMessageRole({ userId, chatId, messageId })
+      : null;
+  const responseMessageId =
+    regeneratedMessageRole === "assistant" && messageId ? messageId : randomUUID();
 
   const result = streamText({
     model: deepseek("deepseek-v4-flash"),
@@ -42,6 +109,34 @@ export async function POST(req: Request) {
   });
 
   return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
+    stream: toUIMessageStream({
+      stream: result.stream,
+      originalMessages: validation.data,
+      generateMessageId: () => responseMessageId,
+      onError: (cause) => {
+        logger.error({ err: cause, userId, chatId }, "生成聊天回复失败");
+        return "生成回复失败，请稍后重试。";
+      },
+      onEnd: async ({ responseMessage }) => {
+        const content = getMessageText(responseMessage).trim();
+
+        if (content.length === 0) {
+          return;
+        }
+
+        try {
+          await saveMessage({
+            userId,
+            chatId,
+            messageId: responseMessage.id,
+            role: "assistant",
+            content,
+          });
+        } catch (cause) {
+          logger.error({ err: cause, userId, chatId }, "保存助手消息失败");
+          throw cause;
+        }
+      },
+    }),
   });
 }

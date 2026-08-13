@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { createChatAction } from "@/app/(chat)/actions";
 import { ChatComposer } from "@/components/chat/chat-composer";
-import { getPendingChatKey } from "@/lib/chat-handoff";
+import { encodePendingChatMessage, getPendingChatKey } from "@/lib/chat-handoff";
 
 export function HomeChatStarter() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export function HomeChatStarter() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState<string>();
 
-  function startChat() {
+  async function startChat() {
     const message = input.trim();
 
     if (!message || isNavigating) {
@@ -22,14 +23,33 @@ export function HomeChatStarter() {
     setError(undefined);
     setIsNavigating(true);
 
+    const messageId = crypto.randomUUID();
+    let result: Awaited<ReturnType<typeof createChatAction>>;
+
     try {
-      const chatId = crypto.randomUUID();
-      sessionStorage.setItem(getPendingChatKey(chatId), message);
-      router.push(`/chat/${chatId}`);
+      result = await createChatAction({ messageId, content: message });
     } catch {
-      setError("无法创建会话，请检查浏览器存储权限后重试。");
+      setError("创建会话失败，请稍后重试。");
       setIsNavigating(false);
+      return;
     }
+
+    if (result.status === "error") {
+      setError(result.message);
+      setIsNavigating(false);
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        getPendingChatKey(result.chatId),
+        encodePendingChatMessage({ messageId: result.messageId, content: message }),
+      );
+    } catch {
+      // 会话和首条消息已经保存；目标页面允许用户手动生成回复。
+    }
+
+    router.push(`/chat/${result.chatId}`);
   }
 
   return (

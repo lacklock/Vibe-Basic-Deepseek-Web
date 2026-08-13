@@ -12,7 +12,21 @@ import {
 
 export type CreateChatInput = Pick<NewChat, "userId" | "title">;
 
+export type CreateChatWithFirstMessageInput = {
+  userId: Chat["userId"];
+  messageId: Message["messageId"];
+  content: Message["content"];
+};
+
 export type CreateMessageInput = Pick<NewMessage, "chatId" | "role" | "content"> & {
+  userId: Chat["userId"];
+};
+
+export type SaveMessageInput = {
+  messageId: Message["messageId"];
+  chatId: Message["chatId"];
+  role: Message["role"];
+  content: Message["content"];
   userId: Chat["userId"];
 };
 
@@ -47,6 +61,13 @@ export class ChatNotFoundError extends Error {
   }
 }
 
+export class MessageConflictError extends Error {
+  constructor() {
+    super("消息 ID 已被其他消息占用。");
+    this.name = "MessageConflictError";
+  }
+}
+
 export async function createChat(input: CreateChatInput): Promise<Chat> {
   const [chat] = await db.insert(chatsTable).values(input).returning();
 
@@ -55,6 +76,39 @@ export async function createChat(input: CreateChatInput): Promise<Chat> {
   }
 
   return chat;
+}
+
+export async function createChatWithFirstMessage({
+  userId,
+  messageId,
+  content,
+}: CreateChatWithFirstMessageInput): Promise<{ chat: Chat; message: Message }> {
+  return db.transaction(async (tx) => {
+    const [chat] = await tx
+      .insert(chatsTable)
+      .values({ userId, title: content.slice(0, 48) })
+      .returning();
+
+    if (!chat) {
+      throw new Error("创建聊天失败。");
+    }
+
+    const [message] = await tx
+      .insert(messagesTable)
+      .values({
+        messageId,
+        chatId: chat.chatId,
+        role: "user",
+        content,
+      })
+      .returning();
+
+    if (!message) {
+      throw new Error("创建首条消息失败。");
+    }
+
+    return { chat, message };
+  });
 }
 
 export async function listChatsByUser({
@@ -104,6 +158,58 @@ export async function createMessage({
   return message;
 }
 
+export async function saveMessage({
+  userId,
+  ...messageInput
+}: SaveMessageInput): Promise<Message> {
+  await requireOwnedChat(userId, messageInput.chatId);
+
+  const [insertedMessage] = await db
+    .insert(messagesTable)
+    .values(messageInput)
+    .onConflictDoNothing({ target: messagesTable.messageId })
+    .returning();
+
+  if (insertedMessage) {
+    return insertedMessage;
+  }
+
+  const [existingMessage] = await db
+    .select({
+      chatId: messagesTable.chatId,
+      role: messagesTable.role,
+    })
+    .from(messagesTable)
+    .where(eq(messagesTable.messageId, messageInput.messageId))
+    .limit(1);
+
+  if (
+    !existingMessage ||
+    existingMessage.chatId !== messageInput.chatId ||
+    existingMessage.role !== messageInput.role
+  ) {
+    throw new MessageConflictError();
+  }
+
+  const [updatedMessage] = await db
+    .update(messagesTable)
+    .set({ content: messageInput.content })
+    .where(
+      and(
+        eq(messagesTable.messageId, messageInput.messageId),
+        eq(messagesTable.chatId, messageInput.chatId),
+        eq(messagesTable.role, messageInput.role),
+      ),
+    )
+    .returning();
+
+  if (!updatedMessage) {
+    throw new Error("保存消息失败。");
+  }
+
+  return updatedMessage;
+}
+
 export async function listMessagesByChat({
   userId,
   chatId,
@@ -139,7 +245,30 @@ export async function listMessagesByChat({
   }));
 }
 
-async function requireOwnedChat(userId: Chat["userId"], chatId: Chat["chatId"]): Promise<void> {
+export async function getOwnedMessageRole({
+  userId,
+  chatId,
+  messageId,
+}: {
+  userId: Chat["userId"];
+  chatId: Chat["chatId"];
+  messageId: Message["messageId"];
+}): Promise<Message["role"] | null> {
+  await requireOwnedChat(userId, chatId);
+
+  const [message] = await db
+    .select({ role: messagesTable.role })
+    .from(messagesTable)
+    .where(and(eq(messagesTable.messageId, messageId), eq(messagesTable.chatId, chatId)))
+    .limit(1);
+
+  return message?.role ?? null;
+}
+
+export async function requireOwnedChat(
+  userId: Chat["userId"],
+  chatId: Chat["chatId"],
+): Promise<void> {
   const [chat] = await db
     .select({ chatId: chatsTable.chatId })
     .from(chatsTable)

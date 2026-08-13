@@ -3,16 +3,17 @@ import { PlusIcon } from "lucide-react";
 
 import { AccountMenu } from "@/components/chat/account-menu";
 import { Brand } from "@/components/chat/brand";
-import { RecentChats } from "@/components/chat/recent-chats";
+import { RecentChats, type RecentChat } from "@/components/chat/recent-chats";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 type SidebarContentProps = {
+  chats: RecentChat[];
   email: string;
 };
 
-export function SidebarContent({ email }: SidebarContentProps) {
+export function SidebarContent({ chats, email }: SidebarContentProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex flex-col gap-2 px-3 pt-4 pb-2">
@@ -33,7 +34,7 @@ export function SidebarContent({ email }: SidebarContentProps) {
           <p className="px-2 text-[11px] font-medium tracking-[0.08em] text-muted-foreground">
             最近聊天
           </p>
-          <RecentChats chats={[]} />
+          <RecentChats chats={chats} />
         </div>
       </ScrollArea>
 

@@ -1,18 +1,24 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 
 import { MessageResponse } from "@/components/ai-elements/message";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getPendingChatKey } from "@/lib/chat-handoff";
+import { decodePendingChatMessage, getPendingChatKey } from "@/lib/chat-handoff";
 import { cn } from "@/lib/utils";
 
 type ChatConversationProps = {
   chatId: string;
+  initialMessages: UIMessage[];
 };
+
+function generateMessageId() {
+  return crypto.randomUUID();
+}
 
 function getMessageText(parts: Array<{ type: string; text?: string }>) {
   return parts
@@ -21,12 +27,16 @@ function getMessageText(parts: Array<{ type: string; text?: string }>) {
     .join("");
 }
 
-export function ChatConversation({ chatId }: ChatConversationProps) {
+export function ChatConversation({ chatId, initialMessages }: ChatConversationProps) {
   const [input, setInput] = useState("");
   const [handoffError, setHandoffError] = useState<string>();
   const didSendPendingMessage = useRef(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, regenerate, status, error } = useChat({ id: chatId });
+  const { messages, sendMessage, regenerate, status, error } = useChat({
+    id: chatId,
+    messages: initialMessages,
+    generateId: generateMessageId,
+  });
   const isBusy = status === "submitted" || status === "streaming";
   const lastMessage = messages.at(-1);
   const hasStreamingResponse =
@@ -51,17 +61,31 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
 
     try {
       const pendingChatKey = getPendingChatKey(chatId);
-      const pendingMessage = sessionStorage.getItem(pendingChatKey);
+      const encodedPendingMessage = sessionStorage.getItem(pendingChatKey);
 
-      if (!pendingMessage) {
+      if (!encodedPendingMessage) {
         return;
       }
 
       sessionStorage.removeItem(pendingChatKey);
-      void sendMessage({ text: pendingMessage });
+      const pendingMessage = decodePendingChatMessage(encodedPendingMessage);
+
+      if (!pendingMessage) {
+        queueMicrotask(() => {
+          setHandoffError("首条消息已保存，但无法自动生成回复。");
+        });
+        return;
+      }
+
+      void sendMessage({
+        text: pendingMessage.content,
+        messageId: pendingMessage.messageId,
+      }).catch(() => {
+        setHandoffError("首条消息已保存，但无法自动生成回复。");
+      });
     } catch {
       queueMicrotask(() => {
-        setHandoffError("无法读取首条消息，请返回首页重新创建会话。");
+        setHandoffError("首条消息已保存，但无法自动生成回复。");
       });
     }
   }, [chatId, sendMessage]);
@@ -82,8 +106,11 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
   }
 
   function retryLastMessage() {
+    setHandoffError(undefined);
     void regenerate();
   }
+
+  const canGenerateReply = status === "ready" && lastMessage?.role === "user";
 
   return (
     <main className="grid h-full min-h-0 grid-rows-[56px_minmax(0,1fr)_auto] bg-background">
@@ -163,11 +190,18 @@ export function ChatConversation({ chatId }: ChatConversationProps) {
               role="alert"
             >
               <span>{handoffError ?? "消息发送失败，请稍后重试。"}</span>
-              {error && messages.length > 0 ? (
+              {messages.length > 0 ? (
                 <Button type="button" size="sm" variant="destructive" onClick={retryLastMessage}>
                   重试
                 </Button>
               ) : null}
+            </div>
+          ) : null}
+          {!handoffError && !error && canGenerateReply ? (
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={retryLastMessage}>
+                生成回复
+              </Button>
             </div>
           ) : null}
           <ChatComposer
