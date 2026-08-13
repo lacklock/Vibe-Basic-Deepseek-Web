@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test, { before, beforeEach, mock } from "node:test";
 
 const revalidatePath = mock.fn();
+class RedirectError extends Error {
+  constructor(readonly path: string) {
+    super(`Redirected to ${path}`);
+  }
+}
+const redirect = mock.fn((path: string): never => {
+  throw new RedirectError(path);
+});
 let claimsResult: {
   data: { claims?: { sub?: string } } | null;
   error: Error | null;
@@ -29,6 +37,9 @@ const createChatWithFirstMessage = mock.fn(async () => ({
 mock.module("next/cache", {
   namedExports: { revalidatePath },
 });
+mock.module("next/navigation", {
+  namedExports: { redirect },
+});
 mock.module("@/lib/supabase/server", {
   namedExports: {
     createClient: async () => ({ auth: { getClaims } }),
@@ -50,6 +61,7 @@ beforeEach(() => {
     error: null,
   };
   revalidatePath.mock.resetCalls();
+  redirect.mock.resetCalls();
   getClaims.mock.resetCalls();
   createChatWithFirstMessage.mock.resetCalls();
 });
@@ -62,18 +74,17 @@ test("createChatAction rejects invalid input before reading the session", async 
   assert.equal(createChatWithFirstMessage.mock.callCount(), 0);
 });
 
-test("createChatAction rejects an expired session", async () => {
+test("createChatAction redirects an expired session to login", async () => {
   claimsResult = { data: null, error: new Error("expired") };
 
-  const result = await createChatAction({
-    messageId: "07678a7e-b32a-4369-87a9-2f62bf24bb75",
-    content: "你好",
-  });
+  await assert.rejects(
+    createChatAction({
+      messageId: "07678a7e-b32a-4369-87a9-2f62bf24bb75",
+      content: "你好",
+    }),
+    (error) => error instanceof RedirectError && error.path === "/login",
+  );
 
-  assert.deepEqual(result, {
-    status: "error",
-    message: "登录状态已失效，请重新登录。",
-  });
   assert.equal(createChatWithFirstMessage.mock.callCount(), 0);
 });
 

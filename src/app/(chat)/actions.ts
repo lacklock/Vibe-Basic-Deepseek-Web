@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createChatWithFirstMessage } from "@/db/queries/chats";
+import { requireUser } from "@/lib/auth/require-user";
 import { logger } from "@/lib/logger";
-import { createClient } from "@/lib/supabase/server";
 
 const createChatSchema = z.object({
   messageId: z.uuid(),
@@ -30,13 +30,7 @@ export async function createChatAction(input: unknown): Promise<CreateChatAction
     return { status: "error", message: "消息格式不正确。" };
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  const userId = data?.claims?.sub;
-
-  if (error || !userId) {
-    return { status: "error", message: "登录状态已失效，请重新登录。" };
-  }
+  const { sub: userId } = await requireUser();
 
   try {
     const { chat, message } = await createChatWithFirstMessage({

@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test, { before, beforeEach, mock } from "node:test";
 
 const revalidatePath = mock.fn();
+class RedirectError extends Error {
+  constructor(readonly path: string) {
+    super(`Redirected to ${path}`);
+  }
+}
+const redirect = mock.fn((path: string): never => {
+  throw new RedirectError(path);
+});
 type ClaimsResult =
   { data: { claims: { sub: string } }; error: null } | { data: null; error: Error };
 
@@ -29,6 +37,9 @@ const update = mock.fn((table: unknown) => {
 mock.module("next/cache", {
   namedExports: { revalidatePath },
 });
+mock.module("next/navigation", {
+  namedExports: { redirect },
+});
 mock.module("@/lib/supabase/server", {
   namedExports: {
     createClient: async () => ({
@@ -50,6 +61,7 @@ before(async () => {
 
 beforeEach(() => {
   revalidatePath.mock.resetCalls();
+  redirect.mock.resetCalls();
   getClaims.mock.resetCalls();
   update.mock.resetCalls();
   set.mock.resetCalls();
@@ -103,20 +115,18 @@ test("updateNicknameAction saves the normalized nickname", async () => {
   });
 });
 
-test("updateNicknameAction does not write without a valid session", async () => {
+test("updateNicknameAction redirects an expired session to login without writing", async () => {
   getClaims.mock.mockImplementationOnce(async () => ({
     data: null,
     error: new Error("expired"),
   }));
 
-  const result = await updateNicknameAction({ status: "idle" }, makeFormData("小明"));
+  await assert.rejects(
+    updateNicknameAction({ status: "idle" }, makeFormData("小明")),
+    (error) => error instanceof RedirectError && error.path === "/login",
+  );
 
   assert.equal(update.mock.callCount(), 0);
-  assert.deepEqual(result, {
-    status: "error",
-    message: "登录状态已失效，请重新登录。",
-    nickname: "小明",
-  });
 });
 
 test("updateNicknameAction reports a missing profile", async () => {

@@ -6,8 +6,8 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import { usersTable } from "@/db/schema";
+import { requireUser } from "@/lib/auth/require-user";
 import { logger } from "@/lib/logger";
-import { createClient } from "@/lib/supabase/server";
 
 export type ProfileActionState = {
   status: "idle" | "error" | "success";
@@ -33,17 +33,7 @@ export async function updateNicknameAction(
     };
   }
 
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const userId = data?.claims?.sub;
-
-  if (!userId) {
-    return {
-      status: "error",
-      message: "登录状态已失效，请重新登录。",
-      nickname: result.data,
-    };
-  }
+  const { sub: userId } = await requireUser();
 
   try {
     const updatedProfiles = await db

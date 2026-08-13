@@ -11,9 +11,9 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { getOwnedMessageRole, requireOwnedChat, saveMessage } from "@/db/queries/chats";
+import { withAuthenticatedRoute } from "@/lib/auth/require-user";
 import { getUIMessageText } from "@/lib/chat-message";
 import { logger } from "@/lib/logger";
-import { createClient } from "@/lib/supabase/server";
 
 const chatRequestSchema = z.object({
   id: z.uuid(),
@@ -22,14 +22,7 @@ const chatRequestSchema = z.object({
   messageId: z.uuid().optional(),
 });
 
-export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-
-  if (error || !data?.claims?.sub) {
-    return Response.json({ error: "未登录或登录状态已失效。" }, { status: 401 });
-  }
-
+export const POST = withAuthenticatedRoute(async (req, claims) => {
   let body: unknown;
 
   try {
@@ -52,7 +45,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "消息格式无效。" }, { status: 400 });
   }
 
-  const userId = data.claims.sub;
+  const userId = claims.sub;
   const { id: chatId, trigger, messageId } = parsedRequest.data;
 
   try {
@@ -133,4 +126,4 @@ export async function POST(req: Request) {
       },
     }),
   });
-}
+});
