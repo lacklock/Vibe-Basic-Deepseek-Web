@@ -266,6 +266,94 @@ test("流结束后保存助手消息", async () => {
   ]);
 });
 
+test("用户中止生成后保存已有的部分助手消息", async () => {
+  const chatId = "25203985-6ff8-45b6-a560-75bf9f56d327";
+  const messages = [
+    {
+      id: "07678a7e-b32a-4369-87a9-2f62bf24bb75",
+      role: "user",
+      parts: [{ type: "text", text: "请详细说明" }],
+    },
+  ];
+  validationResult = { success: true, data: messages };
+
+  await POST(
+    new Request("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ id: chatId, messages, trigger: "submit-message" }),
+    }),
+  );
+
+  const streamOptions = toUIMessageStream.mock.calls[0]?.arguments[0] as {
+    generateMessageId: () => string;
+    onEnd: (event: {
+      isAborted: boolean;
+      responseMessage: (typeof messages)[number];
+    }) => Promise<void>;
+  };
+  const assistantMessageId = streamOptions.generateMessageId();
+
+  await streamOptions.onEnd({
+    isAborted: true,
+    responseMessage: {
+      id: assistantMessageId,
+      role: "assistant",
+      parts: [{ type: "text", text: "这是已经生成的部分" }],
+    },
+  });
+
+  assert.deepEqual(saveMessage.mock.calls[1]?.arguments, [
+    {
+      userId: "user-123",
+      chatId,
+      messageId: assistantMessageId,
+      role: "assistant",
+      content: "这是已经生成的部分",
+    },
+  ]);
+});
+
+test("助手消息保存失败时让流结束回调失败", async () => {
+  const messages = [
+    {
+      id: "07678a7e-b32a-4369-87a9-2f62bf24bb75",
+      role: "user",
+      parts: [{ type: "text", text: "你好" }],
+    },
+  ];
+  validationResult = { success: true, data: messages };
+
+  await POST(
+    new Request("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        id: "25203985-6ff8-45b6-a560-75bf9f56d327",
+        messages,
+        trigger: "submit-message",
+      }),
+    }),
+  );
+
+  const streamOptions = toUIMessageStream.mock.calls[0]?.arguments[0] as {
+    generateMessageId: () => string;
+    onEnd: (event: { responseMessage: (typeof messages)[number] }) => Promise<void>;
+  };
+  saveMessage.mock.mockImplementationOnce(async () => {
+    throw new Error("database unavailable");
+  });
+
+  await assert.rejects(
+    streamOptions.onEnd({
+      responseMessage: {
+        id: streamOptions.generateMessageId(),
+        role: "assistant",
+        parts: [{ type: "text", text: "回答" }],
+      },
+    }),
+    /database unavailable/,
+  );
+});
+
 test("重新生成时复用原助手消息 id", async () => {
   const chatId = "25203985-6ff8-45b6-a560-75bf9f56d327";
   const assistantMessageId = "99999999-6ff8-45b6-a560-75bf9f56d327";

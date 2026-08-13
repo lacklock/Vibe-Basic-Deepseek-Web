@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { getOwnedMessageRole, requireOwnedChat, saveMessage } from "@/db/queries/chats";
+import { getUIMessageText } from "@/lib/chat-message";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,13 +21,6 @@ const chatRequestSchema = z.object({
   trigger: z.enum(["submit-message", "regenerate-message"]),
   messageId: z.uuid().optional(),
 });
-
-function getMessageText(message: UIMessage): string {
-  return message.parts
-    .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
-    .map((part) => part.text)
-    .join("");
-}
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -71,7 +65,7 @@ export async function POST(req: Request) {
   if (trigger === "submit-message") {
     const userMessage = validation.data.at(-1);
     const parsedUserMessageId = z.uuid().safeParse(userMessage?.id);
-    const content = userMessage ? getMessageText(userMessage).trim() : "";
+    const content = userMessage ? getUIMessageText(userMessage.parts).trim() : "";
 
     if (
       !userMessage ||
@@ -118,7 +112,7 @@ export async function POST(req: Request) {
         return "生成回复失败，请稍后重试。";
       },
       onEnd: async ({ responseMessage }) => {
-        const content = getMessageText(responseMessage).trim();
+        const content = getUIMessageText(responseMessage.parts).trim();
 
         if (content.length === 0) {
           return;

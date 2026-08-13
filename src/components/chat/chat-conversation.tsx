@@ -9,6 +9,7 @@ import { ChatComposer } from "@/components/chat/chat-composer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { decodePendingChatMessage, getPendingChatKey } from "@/lib/chat-handoff";
+import { getUIMessageText } from "@/lib/chat-message";
 import { cn } from "@/lib/utils";
 
 type ChatConversationProps = {
@@ -20,19 +21,12 @@ function generateMessageId() {
   return crypto.randomUUID();
 }
 
-function getMessageText(parts: Array<{ type: string; text?: string }>) {
-  return parts
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
-    .map((part) => part.text)
-    .join("");
-}
-
 export function ChatConversation({ chatId, initialMessages }: ChatConversationProps) {
   const [input, setInput] = useState("");
   const [handoffError, setHandoffError] = useState<string>();
   const didSendPendingMessage = useRef(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, regenerate, status, error } = useChat({
+  const { messages, sendMessage, regenerate, stop, status, error } = useChat({
     id: chatId,
     messages: initialMessages,
     generateId: generateMessageId,
@@ -40,7 +34,7 @@ export function ChatConversation({ chatId, initialMessages }: ChatConversationPr
   const isBusy = status === "submitted" || status === "streaming";
   const lastMessage = messages.at(-1);
   const hasStreamingResponse =
-    lastMessage?.role === "assistant" && getMessageText(lastMessage.parts).trim().length > 0;
+    lastMessage?.role === "assistant" && getUIMessageText(lastMessage.parts).trim().length > 0;
   const responseStatus =
     status === "submitted"
       ? "正在等待 DeepSeek 响应…"
@@ -49,7 +43,7 @@ export function ChatConversation({ chatId, initialMessages }: ChatConversationPr
         : null;
   const firstUserMessage = messages.find((message) => message.role === "user");
   const title = firstUserMessage
-    ? getMessageText(firstUserMessage.parts).slice(0, 48) || "当前会话"
+    ? getUIMessageText(firstUserMessage.parts).slice(0, 48) || "当前会话"
     : "当前会话";
 
   useEffect(() => {
@@ -131,7 +125,7 @@ export function ChatConversation({ chatId, initialMessages }: ChatConversationPr
           ) : null}
 
           {messages.map((message, messageIndex) => {
-            const hasText = getMessageText(message.parts).trim().length > 0;
+            const hasText = getUIMessageText(message.parts).trim().length > 0;
 
             if (!hasText) {
               return null;
@@ -212,6 +206,7 @@ export function ChatConversation({ chatId, initialMessages }: ChatConversationPr
             value={input}
             onValueChange={setInput}
             onSubmit={submitMessage}
+            onStop={isBusy ? () => void stop() : undefined}
             disabled={status !== "ready"}
           />
           <p className="mt-2 text-center text-[11px] text-muted-foreground max-sm:hidden">
